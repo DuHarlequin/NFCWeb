@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NFC Reader</title>
+    <script>
+        // Note: This code is intended for demonstration purposes and will not run in a regular browser.
+        // It requires an environment that supports NFC, such as Android with a WebView supporting the Web NFC API.
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const infoDiv = document.getElementById('info');
+
+            function displayMessage(message) {
+                const p = document.createElement('p');
+                p.textContent = message;
+                infoDiv.appendChild(p);
+            }
+
+            if ('NDEFReader' in window) {
+                const ndef = new NDEFReader();
+
+                document.getElementById('scanButton').addEventListener('click', async () => {
+                    try {
+                        displayMessage("Escaneando NFC...");
+                        await ndef.scan();
+
+                        ndef.addEventListener("reading", ({ message, serialNumber }) => {
+                            displayMessage(`Identificador único (serial): ${serialNumber}`);
+                            displayMessage(`Tipo de registro NFC: ${message.records[0].recordType}`);
+
+                            message.records.forEach(record => {
+                                switch (record.recordType) {
+                                    case "text":
+                                        const textDecoder = new TextDecoder(record.encoding);
+                                        const text = textDecoder.decode(record.data);
+                                        displayMessage(`Texto detectado: ${text}`);
+                                        break;
+
+                                    case "url":
+                                        const urlDecoder = new TextDecoder(record.encoding);
+                                        const url = urlDecoder.decode(record.data);
+                                        displayMessage(`URL detectada: ${url}`);
+                                        break;
+
+                                    default:
+                                        displayMessage(`Registro desconocido: ${record.recordType}`);
+                                }
+                            });
+                        });
+
+                    } catch (error) {
+                        displayMessage(`Error al escanear NFC: ${error.message}`);
+                    }
+                });
+            } else {
+                displayMessage("Web NFC no es compatible con este dispositivo o navegador.");
+            }
+        });
+    </script>
+</head>
+<body>
+    <h1>Lector NFC</h1>
+    <button id="scanButton">Escanear NFC</button>
+    <div id="info"></div>
+</body>
+</html>
