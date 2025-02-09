@@ -24,27 +24,45 @@
                         await ndef.scan();
 
                         ndef.addEventListener("reading", ({ message, serialNumber }) => {
-                            displayMessage(`Identificador único (serial): ${serialNumber}`);
-                            displayMessage(`Tipo de registro NFC: ${message.records[0].recordType}`);
+                            displayMessage(`Identificador único (UID): ${serialNumber}`);
+                            
+                            if (message.records.length > 0) {
+                                displayMessage(`Datos encontrados en la tarjeta:`);
+                                
+                                message.records.forEach((record, index) => {
+                                    switch (record.recordType) {
+                                        case "text":
+                                            const textDecoder = new TextDecoder(record.encoding);
+                                            const text = textDecoder.decode(record.data);
+                                            displayMessage(`Registro #${index + 1} - Texto: ${text}`);
+                                            break;
 
-                            message.records.forEach(record => {
-                                switch (record.recordType) {
-                                    case "text":
-                                        const textDecoder = new TextDecoder(record.encoding);
-                                        const text = textDecoder.decode(record.data);
-                                        displayMessage(`Texto detectado: ${text}`);
-                                        break;
+                                        case "url":
+                                            const urlDecoder = new TextDecoder(record.encoding);
+                                            const url = urlDecoder.decode(record.data);
+                                            displayMessage(`Registro #${index + 1} - URL: ${url}`);
+                                            break;
 
-                                    case "url":
-                                        const urlDecoder = new TextDecoder(record.encoding);
-                                        const url = urlDecoder.decode(record.data);
-                                        displayMessage(`URL detectada: ${url}`);
-                                        break;
+                                        case "mime":
+                                            const mimeType = record.mediaType;
+                                            const data = new TextDecoder().decode(record.data);
+                                            displayMessage(`Registro #${index + 1} - Tipo MIME: ${mimeType}, Datos: ${data}`);
+                                            break;
 
-                                    default:
-                                        displayMessage(`Registro desconocido: ${record.recordType}`);
-                                }
-                            });
+                                        case "opaque":
+                                            const rawData = Array.from(new Uint8Array(record.data))
+                                                .map(byte => byte.toString(16).padStart(2, '0'))
+                                                .join(':');
+                                            displayMessage(`Registro #${index + 1} - Datos Opaques (Hex): ${rawData}`);
+                                            break;
+
+                                        default:
+                                            displayMessage(`Registro #${index + 1} - Tipo desconocido: ${record.recordType}`);
+                                    }
+                                });
+                            } else {
+                                displayMessage("No se encontraron datos en la tarjeta.");
+                            }
                         });
 
                     } catch (error) {
